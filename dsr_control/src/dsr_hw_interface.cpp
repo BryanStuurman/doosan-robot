@@ -973,7 +973,7 @@ namespace dsr_control{
 
         //for test host = "127.0.0.1";
 
-        ROS_INFO("[dsr_hw_interface] host %s, port=%d bCommand: %d, mode: %s\n", host.c_str(), nServerPort, bCommand_, mode.c_str());
+        ROS_INFO("[dsr_hw_interface] host %s, port=%d bCommand: %d, mode: %s, Trying to connect...", host.c_str(), nServerPort, bCommand_, mode.c_str());
 
 
         //open a conventional connection AND a realtime connection, so we get some niceties and the realtime control.
@@ -981,11 +981,16 @@ namespace dsr_control{
         //if(Drfl.open_connection(host, nServerPort)&&Drfl.connect_rt_control(host)) 
         if(Drfl.open_connection(host, nServerPort)) //rt connect later if not emulated. //TODO fix when emulator works with rt.
         {
+            ROS_INFO("[dsr_hw_interface] Conventional control connected successfully!"); 
             //--- connect Emulator ? ------------------------------    
             if(host == "127.0.0.1") m_bIsEmulatorMode = true; 
             else                    m_bIsEmulatorMode = false;
 
-            if(!m_bIsEmulatorMode) Drfl.connect_rt_control(host);
+            if(!m_bIsEmulatorMode) 
+            {
+                Drfl.connect_rt_control(host);
+                ROS_INFO("[dsr_hw_interface] REALTIME control connected successfully!"); 
+            }
 
             //--- Get version -------------------------------------            
             SYSTEM_VERSION tSysVerion = {'\0', };
