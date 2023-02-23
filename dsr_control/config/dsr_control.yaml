@@ -47,52 +47,62 @@ dsr_joint_velocity_trajectory_controller:
     - joint6
   publish_rate: 100
   gains:
-    joint_1:
+    joint1:
       p: 1.0
       d: 0
       i: 0
       i_clamp: 0
-    joint_2:
+    joint2:
       p: 1.0
       d: 0
       i: 0
       i_clamp: 0
-    joint_3:
+    joint3:
       p: 1.0
       d: 0
       i: 0
       i_clamp: 0
-    joint_4:
+    joint4:
       p: 1.0
       d: 0
       i: 0
       i_clamp: 0
-    joint_5:
+    joint5:
       p: 1.0
       d: 0
       i: 0
       i_clamp: 0
+    joint6:
+      p: 1.0
+      d: 0
+      i: 0
+      i_clamp: 0
+
   velocity_ff:
-      joint_1: 1.0
-      joint_2: 1.0
-      joint_3: 1.0
-      joint_4: 1.0
-      joint_5: 1.0
+      joint1: 1.0
+      joint2: 1.0
+      joint3: 1.0
+      joint4: 1.0
+      joint5: 1.0
+      joint6: 1.0
   stop_trajectory_duration: 0 # STOP in 0.5 seconds -- glide
   constraints:
-    joint_1:
+    joint1:
       trajectory: 0.1
       goal: 0.01
-    joint_2:
+    joint2:
       trajectory: 0.1
       goal: 0.01
-    joint_3:
+    joint3:
       trajectory: 0.1
       goal: 0.01
-    joint_4:
+    joint4:
       trajectory: 0.1
       goal: 0.01
-    joint_5:
+    joint5:
+      trajectory: 0.1
+      goal: 0.01
+    joint6:
       trajectory: 0.1
       goal: 0.01
 
