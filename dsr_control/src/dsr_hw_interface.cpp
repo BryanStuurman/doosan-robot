@@ -310,7 +310,7 @@ namespace dsr_control{
         //This function is called when the state changes.
         //ROS_INFO("DRHWInterface::OnMonitoringStateCB");    
         // Only work within 50msec
-        ROS_INFO("On Monitor State");
+        // ROS_INFO("On Monitor State");
         switch((unsigned char)eState)
         {
 #if 0 // TP initializing logic, Don't use in API level. (If you want to operate without TP, use this logic)       
@@ -356,7 +356,7 @@ namespace dsr_control{
             break;
         }
 
-        cout << "[callback OnMonitoringStateCB] current state: " << GetRobotStateString((int)eState) << endl;
+        // cout << "[callback OnMonitoringStateCB] current state: " << GetRobotStateString((int)eState) << endl;
         g_stDrState.nRobotState = (int)eState;
         strncpy(g_stDrState.strRobotState, GetRobotStateString((int)eState), MAX_SYMBOL_SIZE); 
     }
@@ -1109,7 +1109,7 @@ namespace dsr_control{
         
 
 
-    void DRHWInterface::read(ros::Duration& elapsed_time)
+    void DRHWInterface::read(ros::Duration& dt)
     {
         // std_msgs::Float64MultiArray msg;
         recv_data_ = Drfl.read_data_rt();    //unclear if this is buffered in the driver, or a nonblocking receive call.
@@ -1129,7 +1129,7 @@ namespace dsr_control{
         //m_PubtoGazebo.publish(msg);
     }
     
-    void DRHWInterface::write(ros::Duration& elapsed_time)
+    void DRHWInterface::write(ros::Duration& dt)
     {
         //ROS_INFO("DRHWInterface::write()");
         for(int i = 0; i < NUM_JOINT; i++) 

@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 
     ros::Time last_time;
     ros::Time curr_time;
-    ros::Duration elapsed;
+    ros::Duration dt;
     last_time = ros::Time::now();
 
     ROS_INFO("[dsr_control] controller_manager is updating!");
@@ -76,10 +76,11 @@ int main(int argc, char** argv)
         try{
             ///ROS_INFO("[dsr_control] Running...(g_nKill_dsr_control=%d)",g_nKill_dsr_control);
             curr_time = ros::Time::now();
-            elapsed = curr_time - last_time;
-            if(pArm) pArm->read(elapsed);
-            cm.update(ros::Time::now(), elapsed);
-            if(pArm) pArm->write(elapsed);
+            dt = curr_time - last_time;
+            last_time = curr_time;
+            if(pArm) pArm->read(dt);
+            cm.update(ros::Time::now(), dt);
+            if(pArm) pArm->write(dt);
             r.sleep();	//(1000/rate)[sec], default: 10ms 
         }
         catch(std::runtime_error& ex)

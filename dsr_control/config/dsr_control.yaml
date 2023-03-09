@@ -85,8 +85,11 @@ dsr_joint_velocity_trajectory_controller:
       joint4: 1.0
       joint5: 1.0
       joint6: 1.0
-  stop_trajectory_duration: 0 # STOP in 0.5 seconds -- glide
+  stop_trajectory_duration: 0.5 # STOP in 0.5 seconds -- glide
   constraints:
+    goal_time: 1.0
+    stopped_velocity_tolerance: 0.005
+
     joint1:
       trajectory: 0.1
       goal: 0.01
