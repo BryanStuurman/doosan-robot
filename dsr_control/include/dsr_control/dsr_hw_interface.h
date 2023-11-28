@@ -517,6 +517,7 @@ namespace dsr_control{
         virtual ~DRHWInterface();
 
         bool init();
+        bool de_init();
         virtual bool prepareSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
                         const std::list<hardware_interface::ControllerInfo> &stop_list);
         virtual void doSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
@@ -657,7 +658,7 @@ namespace dsr_control{
         //----- Threads ------------------------------------------------------------------
         boost::thread m_th_subscribe;   //subscribe thread
         boost::thread m_th_publisher;   //publisher thread
-        static void thread_subscribe(ros::NodeHandle nh);
+        static void thread_subscribe(DRHWInterface* pDRHWInterface, ros::NodeHandle nh);
         static void thread_publisher(DRHWInterface* pDRHWInterface, ros::NodeHandle nh, int nPubRate);
 
         DR_STATE m_stDrState;

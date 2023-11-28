@@ -642,13 +642,17 @@ namespace dsr_control{
     }
     */
 
-    void DRHWInterface::thread_subscribe(ros::NodeHandle nh)
+    void DRHWInterface::thread_subscribe(DRHWInterface* pDRHWInterface, ros::NodeHandle nh)
     {
-        //ros::NodeHandlePtr node = boost::make_shared<ros::NodeHandle>();
         ros::Subscriber sub_robot_stop = nh.subscribe("stop", 1, MsgScriber);
-        //ros::spin();
-        ros::MultiThreadedSpinner spinner(2);
-        spinner.spin(); //TODO: spinonce in a loop on DHI_ok_
+        //BRYAN MODS:
+        //multithreadedspinner is just an asynch on the inside, lets do it ourselves
+        // this way we can also catch the DHI_ok_ flag and force the deconstruction before ros is not ok.
+        ros::AsyncSpinner s(2, 0);
+        s.start();
+        ros::Rate r(1);
+        while (ros::ok()&&pDRHWInterface->DHI_ok_)
+            r.sleep();
     }
 
     void DRHWInterface::thread_publisher(DRHWInterface* pDRHWInterface, ros::NodeHandle nh, int nPubRate)
@@ -923,7 +927,7 @@ namespace dsr_control{
 
         // create threads     
         DHI_ok_=true;
-        m_th_subscribe = boost::thread( boost::bind(&thread_subscribe, private_nh_) );
+        m_th_subscribe = boost::thread( boost::bind(&thread_subscribe, this, private_nh_) );
         m_th_publisher = boost::thread( boost::bind(&thread_publisher, this, private_nh_, DSR_CTL_PUB_RATE/*hz*/) );    //100hz(10ms)
 
         g_nAnalogOutputModeCh1 = -1;
@@ -932,16 +936,24 @@ namespace dsr_control{
     }
     DRHWInterface::~DRHWInterface()
     {
-        DHI_ok_=false;
+        DHI_ok_=false;  // signal the child threads it's time to stop.
+
         //ROS_INFO("DRHWInterface::~DRHWInterface() 0");
         Drfl.close_connection();
 
         //ROS_INFO("DRHWInterface::~DRHWInterface() 1");
-        m_th_publisher.join();   //kill publisher thread    //TODO: i dont think that's how that works.
+        m_th_publisher.join();   //wait for publisher thread
         //ROS_INFO("DRHWInterface::~DRHWInterface() 2");
 
-        m_th_subscribe.join();   //kill subscribe thread    //TODO: i dont think that's how that works.
+        m_th_subscribe.join();   //wait for subscribe thread
         ROS_INFO("DRHWInterface::~DRHWInterface()");
+    }
+
+    bool DRHWInterface::de_init()
+    {
+        if(!m_bIsEmulatorMode) Drfl.disconnect_rt_control();
+        Drfl.close_connection();
+        return(true);
     }
 
     bool DRHWInterface::init()
@@ -1017,7 +1029,7 @@ namespace dsr_control{
 
             //--- Check Robot State : STATE_STANDBY ---               
             int delay;
-            ros::param::param<int>("~standby", delay, 5000);
+            ros::param::param<int>("~standby", delay, 500);
             while ((Drfl.get_robot_state() != STATE_STANDBY)){
                 usleep(delay);
             }
