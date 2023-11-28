@@ -756,7 +756,7 @@ namespace dsr_control{
         m_sub_speedl_rt_stream = private_nh_.subscribe("speedl_rt_stream", 1, &DRHWInterface::speedlRTCallback, this);
         m_sub_torque_rt_stream = private_nh_.subscribe("torque_rt_stream", 1, &DRHWInterface::torqueRTCallback, this);
 
-        // system Operations
+       // system Operations
         m_nh_system[0] = private_nh_.advertiseService("system/set_robot_mode", &DRHWInterface::set_robot_mode_cb, this);
         m_nh_system[1] = private_nh_.advertiseService("system/get_robot_mode", &DRHWInterface::get_robot_mode_cb, this);
         m_nh_system[2] = private_nh_.advertiseService("system/set_robot_system", &DRHWInterface::set_robot_system_cb, this);
@@ -772,6 +772,7 @@ namespace dsr_control{
         m_nh_system[12]= private_nh_.advertiseService("system/set_robot_control", &DRHWInterface::set_robot_control_cb, this);
         m_nh_system[13]= private_nh_.advertiseService("system/manage_access_control", &DRHWInterface::manage_access_control_cb, this);
         m_nh_system[14]= private_nh_.advertiseService("system/release_protective_stop", &DRHWInterface::release_protective_stop_cb, this);
+        m_nh_system[15]= private_nh_.advertiseService("system/set_safety_mode", &DRHWInterface::set_safety_mode_cb, this);
 
         //  motion Operations
         m_nh_motion_service[0] = private_nh_.advertiseService("motion/move_joint", &DRHWInterface::movej_cb, this);
@@ -1113,7 +1114,7 @@ namespace dsr_control{
     {
         // std_msgs::Float64MultiArray msg;
         recv_data_ = Drfl.read_data_rt();    //unclear if this is buffered in the driver, or a nonblocking receive call.
-        
+        // ROS_WARN("driver timestamp: %f", recv_data_->time_stamp);
         for(int i=0; i<NUM_JOINT; i++)
         {
             //Read uses realtime feedback message
@@ -1458,6 +1459,13 @@ namespace dsr_control{
     bool DRHWInterface::release_protective_stop_cb(dsr_msgs::ReleaseProtectiveStop::Request& req, dsr_msgs::ReleaseProtectiveStop::Response& res){
         res.success = false;
         Drfl.release_protective_stop((RELEASE_MODE)req.release_mode);
+        res.success = true;
+        return true;
+    }
+
+    bool DRHWInterface::set_safety_mode_cb(dsr_msgs::SetSafetyMode::Request& req, dsr_msgs::SetSafetyMode::Response& res){
+        res.success = false;
+        Drfl.set_safety_mode((SAFETY_MODE)req.safety_mode, (SAFETY_MODE_EVENT)req.safety_mode_event);
         res.success = true;
         return true;
     }
