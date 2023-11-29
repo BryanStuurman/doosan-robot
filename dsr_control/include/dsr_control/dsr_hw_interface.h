@@ -518,6 +518,7 @@ namespace dsr_control{
 
         bool init();
         bool de_init();
+        bool data_ok(){ return data_ok_;};
         virtual bool prepareSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
                         const std::list<hardware_interface::ControllerInfo> &stop_list);
         virtual void doSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
@@ -624,6 +625,9 @@ namespace dsr_control{
         double rate_=1.23;     //controller/statuser update rate
         int drops_=1;       //permitted drops, probably.
         LPRT_OUTPUT_DATA_LIST recv_data_;
+        double last_time_stamp_=0.0;
+        unsigned int sequential_drops_=0;
+        bool data_ok_ = true;
 
         //std::array<float, NUM_JOINT> cmd_;
         bool bCommand_;

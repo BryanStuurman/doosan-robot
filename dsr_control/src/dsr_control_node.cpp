@@ -30,14 +30,19 @@ void SigHandler(int sig)
 
 int main(int argc, char** argv)
 {
+    bool try_reconnect = true;
+    bool startup_controller_reset = true;
+    unsigned int reconnects=0;
     //----- init ROS ---------------------- 
     ///ros::init(argc, argv, "dsr_control_node");
     ros::init(argc, argv, "dsr_control_node", ros::init_options::NoSigintHandler);
     ros::NodeHandle private_nh("~");
-    ///ros::NodeHandle nh("/dsr_control");
     // Override the default ros sigint handler.
     // This must be set after the first NodeHandle is created.
     signal(SIGINT, SigHandler);
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
+
 
     //----- get param ---------------------
     int rate;
@@ -45,53 +50,59 @@ int main(int argc, char** argv)
     ROS_INFO("rate is %d\n", rate);
     ros::Rate r(rate);
 
-    ///dsr_control::DRHWInterface arm(nh);
     DRHWInterface* pArm = NULL;
     pArm = new DRHWInterface(private_nh);
-
-    if(!pArm->init() ){
-        ROS_ERROR("[dsr_control] Error initializing robot");
-        return -1;
-    }
-    ///controller_manager::ControllerManager cm(&arm, nh);
     controller_manager::ControllerManager cm(pArm, private_nh);
-    ros::AsyncSpinner spinner(1);
-    spinner.start();
-
-//    int rate;
-//    private_nh.param<int>("rate", rate, 50);
-//    ROS_INFO("rate is %d\n", rate);
-//    ros::Rate r(rate);
-
-    ros::Time last_time;
-    ros::Time curr_time;
-    ros::Duration dt;
-    last_time = ros::Time::now();
-
-    ROS_INFO("[dsr_control] controller_manager is updating!");
-
-    while(ros::ok() && (false==g_nKill_dsr_control))
+    while(try_reconnect)
     {
-        try{
-            curr_time = ros::Time::now();
-            dt = curr_time - last_time;
-            last_time = curr_time;
-            if(pArm) pArm->read(dt);
-            cm.update(ros::Time::now(), dt);
-            if(pArm) pArm->write(dt);
-            r.sleep();
+        if(!pArm->init() ){
+            ROS_ERROR("[dsr_control] Error initializing robot");
+            return -1;
         }
-        catch(std::runtime_error& ex)
+
+        ros::Time last_time;
+        ros::Time curr_time;
+        ros::Duration dt;
+        last_time = ros::Time::now();
+
+        ROS_INFO("[dsr_control] controller_manager is updating!");
+
+        while(ros::ok() && (false==g_nKill_dsr_control) && pArm->data_ok())
         {
-            ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
-            ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
-            ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
-            break;
+            try{
+                curr_time = ros::Time::now();
+                dt = curr_time - last_time;
+                last_time = curr_time;
+                if(pArm) pArm->read(dt);
+                cm.update(ros::Time::now(), dt, startup_controller_reset);
+                startup_controller_reset = false;
+                if(pArm) pArm->write(dt);
+                r.sleep();
+            }
+            catch(std::runtime_error& ex)
+            {
+                ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
+                ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
+                ROS_ERROR("[dsr_control] Exception: [%s]", ex.what());
+                break;
+            }
+        }
+
+        pArm->de_init();
+        startup_controller_reset = true;
+        reconnects++;
+        ROS_WARN("[dsr_control] DISCONNECTED, RECONNECTING. Reconnect count at %u", reconnects);
+        if (reconnects>25)
+        {
+            try_reconnect = false;
+            ROS_FATAL("[dsr_control] DISCONNECTED, TOO MANY RECONNECTS, TERMINATING DRIVER. Reconnect count was %u", reconnects);
+        }else
+        {
+            ROS_WARN("[dsr_control] DISCONNECTED, RECONNECTING. Reconnect count at %u", reconnects);
         }
     }
 
     spinner.stop();
-    //if(pArm) delete(pArm);
 
     ROS_INFO("[dsr_control] Good-bye!");
 

@@ -1029,14 +1029,18 @@ namespace dsr_control{
 
             //--- Check Robot State : STATE_STANDBY ---               
             int delay;
-            ros::param::param<int>("~standby", delay, 500);
-            while ((Drfl.get_robot_state() != STATE_STANDBY)){
+            ros::param::param<int>("~standby", delay, 5000);
+            delay=delay/10;
+            int wait_count=0;
+            while ((Drfl.get_robot_state() != STATE_STANDBY) && (wait_count<10)){
                 usleep(delay);
+                wait_count++;
             }
 
             //--- Set Robot mode : MANUAL or AUTO
             //assert(Drfl.SetRobotMode(ROBOT_MODE_MANUAL));
-            assert(Drfl.set_robot_mode(ROBOT_MODE_AUTONOMOUS)); //normal speed mode ros manual pp304
+            if (Drfl.get_robot_state() == STATE_STANDBY)
+                assert(Drfl.set_robot_mode(ROBOT_MODE_AUTONOMOUS)); //normal speed mode ros manual pp304
 
             //--- Set Robot mode : virual or real 
             ROBOT_SYSTEM eTargetSystem = ROBOT_SYSTEM_VIRTUAL;
@@ -1055,6 +1059,8 @@ namespace dsr_control{
             Drfl.set_rt_control_output("v1.0", 1/rate_, drops_);    //Drops isnt used yet.
 
             ROS_INFO("[INIT] RT UDP interface connected and initialized to a rate of %fHz and %d drops.", rate_, drops_);
+
+            data_ok_=true;
 
             return(true);
         }
@@ -1126,7 +1132,24 @@ namespace dsr_control{
     {
         // std_msgs::Float64MultiArray msg;
         recv_data_ = Drfl.read_data_rt();    //unclear if this is buffered in the driver, or a nonblocking receive call.
-        // ROS_WARN("driver timestamp: %f", recv_data_->time_stamp);
+        
+        // no flags for whether the read function works or not, but we DO have a robot controller timestamp, 
+        // and it doesnt increment when there's no recevied data.
+        if(recv_data_->time_stamp > last_time_stamp_)
+        {
+            //this is good
+            last_time_stamp_ = recv_data_->time_stamp;
+            sequential_drops_=0;
+        } else
+        {
+            //this is bad
+            sequential_drops_++;
+            if(sequential_drops_>10)
+            {
+                sequential_drops_=0;
+                data_ok_=false;
+            }
+        }
         for(int i=0; i<NUM_JOINT; i++)
         {
             //Read uses realtime feedback message
