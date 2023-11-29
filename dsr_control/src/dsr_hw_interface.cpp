@@ -397,7 +397,7 @@ namespace dsr_control{
     {
         //This function is called when an error occurs.
         ros::NodeHandlePtr node=boost::make_shared<ros::NodeHandle>();
-        ros::Publisher PubRobotError=node->advertise<dsr_msgs::RobotError>("error",100);
+        ros::Publisher PubRobotError=node->advertise<dsr_msgs::RobotError>("error",1);
         dsr_msgs::RobotError msg;
 
         switch(pLogAlarm->_iLevel)
@@ -658,8 +658,8 @@ namespace dsr_control{
     void DRHWInterface::thread_publisher(DRHWInterface* pDRHWInterface, ros::NodeHandle nh, int nPubRate)
     {  
         //ros::NodeHandlePtr node = boost::make_shared<ros::NodeHandle>();
-        ros::Publisher PubRobotState = nh.advertise<dsr_msgs::RobotState>("state",1);
-        dsr_msgs::RobotState msg;
+        // ros::Publisher PubRobotState = nh.advertise<dsr_msgs::RobotState>("state",1);
+        // dsr_msgs::RobotState msg;
 
         ros::Rate r(nPubRate);
         while (ros::ok()&&pDRHWInterface->DHI_ok_)
@@ -731,8 +731,8 @@ namespace dsr_control{
         */
 
         // Publisher msg 
-        m_PubRobotState = private_nh_.advertise<dsr_msgs::RobotState>("state",100);
-        m_PubRobotError = private_nh_.advertise<dsr_msgs::RobotError>("error",100);
+        m_PubRobotState = private_nh_.advertise<dsr_msgs::RobotState>("state",1);
+        // m_PubRobotError = private_nh_.advertise<dsr_msgs::RobotError>("error",1);
         ///m_PubJogMultiAxis = private_nh_.advertise<dsr_msgs::JogMultiAxis>("jog_multi",100);
 
         // gazebo에 joint position 전달
@@ -920,6 +920,9 @@ namespace dsr_control{
         m_nh_realtime_service[14] = private_nh_.advertiseService("realtime/read_data_rt", &DRHWInterface::read_data_rt_cb, this);
         m_nh_realtime_service[14] = private_nh_.advertiseService("realtime/write_data_rt", &DRHWInterface::write_data_rt_cb, this);
 
+        //realtime mode, state and control publisher
+        
+
         memset(&g_stDrState, 0x00, sizeof(DR_STATE)); 
         memset(&g_stDrError, 0x00, sizeof(DR_ERROR)); 
         memset(&m_stDrState, 0x00, sizeof(DR_STATE));
@@ -1029,7 +1032,7 @@ namespace dsr_control{
 
             //--- Check Robot State : STATE_STANDBY ---               
             int delay;
-            ros::param::param<int>("~standby", delay, 5000);
+            ros::param::param<int>("~standby", delay, 200000);
             delay=delay/10;
             int wait_count=0;
             while ((Drfl.get_robot_state() != STATE_STANDBY) && (wait_count<10)){
@@ -1163,6 +1166,7 @@ namespace dsr_control{
         //  msg.data.push_back(joints[6].pos);
         
         //m_PubtoGazebo.publish(msg);
+        
     }
     
     void DRHWInterface::write(ros::Duration& dt)
@@ -3316,5 +3320,7 @@ namespace dsr_control{
         res.success = Drfl.write_data_rt(external_force_torque.data(), req.external_digital_input, req.external_digital_output, external_analog_input.data(), external_analog_output.data());
         return true;
     } 
+
+
 
 }

@@ -44,13 +44,16 @@
 #include <boost/thread/thread.hpp>
 #include <array>
 #include <algorithm>  // std::copy
+#include <functional>   //std::mem_fn
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
+#include <realtime_tools/realtime_publisher.h>
 
 // msg
 #include <dsr_msgs/RobotError.h>
