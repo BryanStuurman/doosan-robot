@@ -53,11 +53,13 @@ int main(int argc, char** argv)
     DRHWInterface* pArm = NULL;
     pArm = new DRHWInterface(private_nh);
     controller_manager::ControllerManager cm(pArm, private_nh);
-    while(try_reconnect)
+    while(try_reconnect && (!g_nKill_dsr_control))
     {
         if(!pArm->init() ){
-            ROS_ERROR("[dsr_control] Error initializing robot");
-            return -1;
+            ROS_ERROR("[dsr_control] Error initializing robot, init returns false");
+            // return -1;
+            // pArm->halt_DHI();
+            break;
         }
 
         ros::Time last_time;
@@ -102,7 +104,10 @@ int main(int argc, char** argv)
         }
     }
 
-    spinner.stop();
+    pArm->halt_DHI();
+    ROS_WARN("pre stop");
+    // spinner.stop();
+    ROS_WARN("post stop");
 
     ROS_INFO("[dsr_control] Good-bye!");
 

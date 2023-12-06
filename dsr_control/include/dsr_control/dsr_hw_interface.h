@@ -522,6 +522,7 @@ namespace dsr_control{
         bool init();
         bool de_init();
         bool data_ok(){ return data_ok_;};
+        void halt_DHI(){ DHI_ok_=false;};
         virtual bool prepareSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
                         const std::list<hardware_interface::ControllerInfo> &stop_list);
         virtual void doSwitch(const std::list<hardware_interface::ControllerInfo> &start_list,
@@ -615,6 +616,8 @@ namespace dsr_control{
         ros::Subscriber m_sub_speedj_rt_stream;
         ros::Subscriber m_sub_speedl_rt_stream;
         ros::Subscriber m_sub_torque_rt_stream;
+
+        ros::Subscriber sub_robot_stop;
 
         // ROS Interface
         hardware_interface::JointStateInterface jnt_state_interface;

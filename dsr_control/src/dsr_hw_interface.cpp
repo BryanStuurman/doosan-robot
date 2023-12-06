@@ -644,14 +644,14 @@ namespace dsr_control{
 
     void DRHWInterface::thread_subscribe(DRHWInterface* pDRHWInterface, ros::NodeHandle nh)
     {
-        ros::Subscriber sub_robot_stop = nh.subscribe("stop", 1, MsgScriber);
+        
         //BRYAN MODS:
         //multithreadedspinner is just an asynch on the inside, lets do it ourselves
         // this way we can also catch the DHI_ok_ flag and force the deconstruction before ros is not ok.
-        ros::AsyncSpinner s(2, 0);
-        s.start();
+        // ros::AsyncSpinner s(2, 0);
+        // s.start();
         ros::Rate r(1);
-        while (ros::ok()&&pDRHWInterface->DHI_ok_)
+        while (ros::ok() && pDRHWInterface->DHI_ok_)
             r.sleep();
     }
 
@@ -668,6 +668,7 @@ namespace dsr_control{
             if(pDRHWInterface) pDRHWInterface->MsgPublisher_RobotState();
             r.sleep();
         }
+        ROS_WARN("pub thread done");
     }  
 
     DRHWInterface::DRHWInterface(ros::NodeHandle& nh):private_nh_(nh)
@@ -920,7 +921,8 @@ namespace dsr_control{
         m_nh_realtime_service[14] = private_nh_.advertiseService("realtime/read_data_rt", &DRHWInterface::read_data_rt_cb, this);
         m_nh_realtime_service[14] = private_nh_.advertiseService("realtime/write_data_rt", &DRHWInterface::write_data_rt_cb, this);
 
-        //realtime mode, state and control publisher
+        //stop subscriber
+        sub_robot_stop = private_nh_.subscribe("stop", 1, MsgScriber);
         
 
         memset(&g_stDrState, 0x00, sizeof(DR_STATE)); 
@@ -930,7 +932,7 @@ namespace dsr_control{
 
         // create threads     
         DHI_ok_=true;
-        m_th_subscribe = boost::thread( boost::bind(&thread_subscribe, this, private_nh_) );
+        // m_th_subscribe = boost::thread( boost::bind(&thread_subscribe, this, private_nh_) );
         m_th_publisher = boost::thread( boost::bind(&thread_publisher, this, private_nh_, DSR_CTL_PUB_RATE/*hz*/) );    //100hz(10ms)
 
         g_nAnalogOutputModeCh1 = -1;
@@ -941,19 +943,20 @@ namespace dsr_control{
     {
         DHI_ok_=false;  // signal the child threads it's time to stop.
 
-        //ROS_INFO("DRHWInterface::~DRHWInterface() 0");
+        ROS_INFO("DRHWInterface::~DRHWInterface() 0");
         Drfl.close_connection();
 
-        //ROS_INFO("DRHWInterface::~DRHWInterface() 1");
+        ROS_INFO("DRHWInterface::~DRHWInterface() 1");
         m_th_publisher.join();   //wait for publisher thread
-        //ROS_INFO("DRHWInterface::~DRHWInterface() 2");
+        ROS_INFO("DRHWInterface::~DRHWInterface() 2");
 
-        m_th_subscribe.join();   //wait for subscribe thread
+        // m_th_subscribe.join();   //wait for subscribe thread
         ROS_INFO("DRHWInterface::~DRHWInterface()");
     }
 
     bool DRHWInterface::de_init()
     {
+        Drfl.stop_rt_control();
         if(!m_bIsEmulatorMode) Drfl.disconnect_rt_control();
         Drfl.close_connection();
         return(true);
@@ -992,15 +995,14 @@ namespace dsr_control{
         ROS_INFO("[dsr_hw_interface] host %s, port=%d bCommand: %d, mode: %s\n", host.c_str(), nServerPort, bCommand_, mode.c_str());
 
 
-        //open a conventional connection AND a realtime connection, so we get some niceties and the realtime control.
-        //TODO: might drop the conventional connection after init is done, not sure.
-        //if(Drfl.open_connection(host, nServerPort)&&Drfl.connect_rt_control(host))  //TODO: when mode virtual dont do rt connect somehow.
-        if(Drfl.open_connection(host, nServerPort)) //dropped the udp port for testing, as the emulator doesnt emulate that part.
+        //open a conventional connection to the robot
+        if(Drfl.open_connection(host, nServerPort))
         {
             //--- connect Emulator ? ------------------------------    
             if(host == "127.0.0.1") m_bIsEmulatorMode = true; 
             else                    m_bIsEmulatorMode = false;
 
+            // open a realtime control connection to the robot, but not if it's a simulated robot.
             if(!m_bIsEmulatorMode) Drfl.connect_rt_control(host);
 
             //--- Get version -------------------------------------            
@@ -1040,8 +1042,7 @@ namespace dsr_control{
                 wait_count++;
             }
 
-            //--- Set Robot mode : MANUAL or AUTO
-            //assert(Drfl.SetRobotMode(ROBOT_MODE_MANUAL));
+            //--- Set Robot mode AUTO
             if (Drfl.get_robot_state() == STATE_STANDBY)
                 assert(Drfl.set_robot_mode(ROBOT_MODE_AUTONOMOUS)); //normal speed mode ros manual pp304
 
