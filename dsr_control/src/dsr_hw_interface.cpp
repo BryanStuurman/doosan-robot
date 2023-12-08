@@ -1148,7 +1148,7 @@ namespace dsr_control{
         {
             //this is bad
             sequential_drops_++;
-            if(sequential_drops_>10)
+            if(sequential_drops_>100)   //TODO: cannot handle startup condition where it starts reading before the robot starts sending.
             {
                 ROS_ERROR("[] too many dropped packets!");
                 sequential_drops_=0;
