@@ -1150,6 +1150,7 @@ namespace dsr_control{
             sequential_drops_++;
             if(sequential_drops_>10)
             {
+                ROS_ERROR("[] too many dropped packets!");
                 sequential_drops_=0;
                 data_ok_=false;
             }
