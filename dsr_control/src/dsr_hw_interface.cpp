@@ -1034,14 +1034,16 @@ namespace dsr_control{
 
             //--- Check Robot State : STATE_STANDBY ---               
             int delay;
-            ros::param::param<int>("~standby", delay, 200000);
+            ros::param::param<int>("~standby", delay, 500000);
             delay=delay/10;
             int wait_count=0;
             while ((Drfl.get_robot_state() != STATE_STANDBY) && (wait_count<10)){
                 usleep(delay);
                 wait_count++;
             }
-
+            if(Drfl.get_robot_state() != STATE_STANDBY)
+                ROS_WARN("[DOOSAN] Continuing init() without robot in standby.");
+                
             //--- Set Robot mode AUTO
             if (Drfl.get_robot_state() == STATE_STANDBY)
                 assert(Drfl.set_robot_mode(ROBOT_MODE_AUTONOMOUS)); //normal speed mode ros manual pp304
