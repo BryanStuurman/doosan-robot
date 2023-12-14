@@ -89,7 +89,7 @@ int main(int argc, char** argv)
                 break;
             }
         }
-
+        ROS_WARN("[dsr_control] doosan update loop broke.");
         pArm->de_init();
         startup_controller_reset = true;
         reconnects++;
