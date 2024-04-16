@@ -397,7 +397,7 @@ namespace dsr_control{
     {
         //This function is called when an error occurs.
         ros::NodeHandlePtr node=boost::make_shared<ros::NodeHandle>();
-        ros::Publisher PubRobotError=node->advertise<dsr_msgs::RobotError>("error",100);
+        ros::Publisher PubRobotError=node->advertise<dsr_msgs::RobotError>("error",1);
         dsr_msgs::RobotError msg;
 
         switch(pLogAlarm->_iLevel)
@@ -727,8 +727,8 @@ namespace dsr_control{
         */
 
         // Publisher msg 
-        m_PubRobotState = private_nh_.advertise<dsr_msgs::RobotState>("state",100);
-        m_PubRobotError = private_nh_.advertise<dsr_msgs::RobotError>("error",100);
+        m_PubRobotState = private_nh_.advertise<dsr_msgs::RobotState>("state",1);
+        m_PubRobotError = private_nh_.advertise<dsr_msgs::RobotError>("error",1);
         ///m_PubJogMultiAxis = private_nh_.advertise<dsr_msgs::JogMultiAxis>("jog_multi",100);
 
         // gazebo에 joint position 전달
